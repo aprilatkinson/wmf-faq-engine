@@ -30,6 +30,7 @@
     "vitest": "^4.1.8"
   },
   "dependencies": {
+    "playwright": "^1.60.0",
     "zod": "^4.4.3"
   }
 }
