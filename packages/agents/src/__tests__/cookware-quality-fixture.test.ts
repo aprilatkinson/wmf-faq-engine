@@ -151,18 +151,18 @@ describe('Cookware quality fixture readiness', () => {
 
     expect(supportedQuestions).toEqual(
       expect.arrayContaining([
-        'Ist das WMF Quality One Topfset für Induktionsherde geeignet?',
-        'Können die Cool+ Griffe beim Kochen trotzdem warm werden?',
-        'Hilft der Glasdeckel mit Dampföffnung gegen Klappern und Überkochen?',
-        'Warum entstehen weiße Flecken oder Regenbogen-Verfärbungen auf Edelstahl?',
+        'Is the WMF Quality One pot set suitable for induction hobs?',
+        'Can the Cool+ handles still become warm during cooking?',
+        'Does the steam vent glass lid help reduce rattling and boiling over?',
+        'Why do white spots or rainbow discoloration appear on stainless steel?',
         expect.stringMatching(/Fleck.*Rost|Rost/i),
-        'Sollte ich die Töpfe von Hand spülen, obwohl sie spülmaschinengeeignet sind?',
+        'Should I hand wash the pots even if they are dishwasher-suitable?',
         expect.stringMatching(/antihaftbeschichtet/i),
-        'Ist dieses Topfset zum Kochen und Köcheln gedacht oder zum Braten?',
-        expect.stringMatching(/Bratpfanne enthalten/i),
-        'Welche WMF Pfanne sollte ich für Eier oder schonendes Braten ergänzen?',
-        'Welche WMF Pfanne sollte ich für Steak oder intensives Anbraten ergänzen?',
-        'Was ist der Unterschied zwischen Quality One und einem einfacheren Edelstahl-Topfset?',
+        'Does the WMF Quality One 5-piece pot set include a frying pan?',
+        'Is this pot set for boiling and simmering, or for frying?',
+        'Which WMF pan should I add for eggs or gentle frying?',
+        'Which WMF pan should I add for steak or intense searing?',
+        'What is the difference between Quality One and a simpler stainless-steel pot set?',
       ]),
     );
   });
@@ -172,6 +172,7 @@ describe('Cookware quality fixture readiness', () => {
     const plan = createFaqPlan(pko, { targetFaqCount: 20 });
     const questions = plan.map((item) => item.question_draft).join('\n');
 
+    expect(questions).not.toMatch(/abstract positioning|positioning question/i);
     expect(questions).not.toMatch(/premium cookware|premium-kochgeschirr/i);
     expect(questions).not.toMatch(/good cookware|gutes kochgeschirr/i);
     expect(questions).not.toMatch(/suitable for everyone|für alle geeignet|fuer alle geeignet/i);
@@ -194,6 +195,7 @@ describe('Cookware quality fixture readiness', () => {
     for (const faq of faqs) {
       expect(() => faqItemSchema.parse(faq)).not.toThrow();
       expect(faq.source_evidence.length).toBeGreaterThan(0);
+      expect(faq.source_evidence.every((item) => item.trim().length > 0)).toBe(true);
       expect(faq.answer).not.toMatch(/made in germany|hergestellt in deutschland/i);
       expect(faq.answer).not.toMatch(/never hot|niemals heiß|nie heiß|wird nicht heiß/i);
       expect(faq.answer).not.toMatch(/rust-proof|rostfrei im sinne von rost-proof|rostsicher/i);

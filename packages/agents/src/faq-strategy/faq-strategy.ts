@@ -216,25 +216,25 @@ export function createFaqPlan(pko: ProductKnowledgeObject, options: StrategyOpti
   if (/cookware|kochgeschirr/i.test(pko.category) && /quality one/i.test(pko.product_family)) {
     const cookwareTemplates: Array<{ question: string; patterns: RegExp[]; answer_type: FaqPlanItem['answer_type']; purpose: FAQPurposeTag[] }> = [
       {
-        question: 'Ist das WMF Quality One Topfset für Induktionsherde geeignet?',
+        question: 'Is the WMF Quality One pot set suitable for induction hobs?',
         patterns: [/induction|induktion/i],
         answer_type: 'compatibility',
         purpose: ['expectation'],
       },
       {
-        question: 'Können die Cool+ Griffe beim Kochen trotzdem warm werden?',
+        question: 'Can the Cool+ handles still become warm during cooking?',
         patterns: [/cool\+|handle warmth|griff.*warm|wärme.*griff|waerme.*griff/i],
         answer_type: 'other',
         purpose: ['buyer-hesitation', 'expectation'],
       },
       {
-        question: 'Hilft der Glasdeckel mit Dampföffnung gegen Klappern und Überkochen?',
+        question: 'Does the steam vent glass lid help reduce rattling and boiling over?',
         patterns: [/steam vent|dampföffnung|dampfoeffnung|glass lid|glasdeckel|rattling|klappern|boiling over|überkochen|ueberkochen|limit|grenze/i],
         answer_type: 'howto',
         purpose: ['expectation'],
       },
       {
-        question: 'Warum entstehen weiße Flecken oder Regenbogen-Verfärbungen auf Edelstahl?',
+        question: 'Why do white spots or rainbow discoloration appear on stainless steel?',
         patterns: [/white spot|weiße flecken|weisse flecken|discoloration|verfärbung|verfaerbung/i],
         answer_type: 'care',
         purpose: ['support-reduction'],
@@ -246,7 +246,7 @@ export function createFaqPlan(pko: ProductKnowledgeObject, options: StrategyOpti
         purpose: ['support-reduction', 'buyer-hesitation'],
       },
       {
-        question: 'Sollte ich die Töpfe von Hand spülen, obwohl sie spülmaschinengeeignet sind?',
+        question: 'Should I hand wash the pots even if they are dishwasher-suitable?',
         patterns: [/dishwasher|spülmaschine|spuelmaschine|spülmaschinengeeignet|spuelmaschinengeeignet/i],
         answer_type: 'care',
         purpose: ['support-reduction'],
@@ -258,31 +258,31 @@ export function createFaqPlan(pko: ProductKnowledgeObject, options: StrategyOpti
         purpose: ['buyer-hesitation'],
       },
       {
-        question: 'Ist dieses Topfset zum Kochen und Köcheln gedacht oder zum Braten?',
+        question: 'Is this pot set for boiling and simmering, or for frying?',
         patterns: [/boiling|simmering|pasta|soups|sauces|kochen|köcheln|koecheln|nudeln|suppen|saucen|frying|braten|not non-stick|no frying pan/i],
         answer_type: 'other',
         purpose: ['expectation', 'buyer-hesitation'],
       },
       {
-        question: 'Ist im Quality One Set eine Bratpfanne enthalten?',
+        question: 'Does the WMF Quality One 5-piece pot set include a frying pan?',
         patterns: [/no frying pan|keine bratpfanne|pot set|topfset/i],
         answer_type: 'spec',
         purpose: ['expectation'],
       },
       {
-        question: 'Welche WMF Pfanne sollte ich für Eier oder schonendes Braten ergänzen?',
+        question: 'Which WMF pan should I add for eggs or gentle frying?',
         patterns: [/eggs|eier|gentle frying|schonendes braten|pan upsell/i],
         answer_type: 'other',
         purpose: ['upsell', 'benefit-selling'],
       },
       {
-        question: 'Welche WMF Pfanne sollte ich für Steak oder intensives Anbraten ergänzen?',
+        question: 'Which WMF pan should I add for steak or intense searing?',
         patterns: [/steak|intense searing|scharfes anbraten|intensives anbraten|pan upsell/i],
         answer_type: 'other',
         purpose: ['upsell', 'benefit-selling'],
       },
       {
-        question: 'Was ist der Unterschied zwischen Quality One und einem einfacheren Edelstahl-Topfset?',
+        question: 'What is the difference between Quality One and a simpler stainless-steel pot set?',
         patterns: [/simpler pot set|einfacheres topfset|provence plus|comparison|vergleich/i],
         answer_type: 'other',
         purpose: ['comparison', 'positioning'],
@@ -390,18 +390,18 @@ export function createFaqPlan(pko: ProductKnowledgeObject, options: StrategyOpti
 
   if (/cookware|kochgeschirr/i.test(pko.category) && /quality one/i.test(pko.product_family)) {
     const cookwarePriority = [
-      'Ist das WMF Quality One Topfset für Induktionsherde geeignet?',
-      'Können die Cool+ Griffe beim Kochen trotzdem warm werden?',
-      'Hilft der Glasdeckel mit Dampföffnung gegen Klappern und Überkochen?',
-      'Warum entstehen weiße Flecken oder Regenbogen-Verfärbungen auf Edelstahl?',
+      'Is the WMF Quality One pot set suitable for induction hobs?',
+      'Can the Cool+ handles still become warm during cooking?',
+      'Does the steam vent glass lid help reduce rattling and boiling over?',
+      'Why do white spots or rainbow discoloration appear on stainless steel?',
       'Ist eine Verfärbung oder ein Fleck automatisch Rost?',
-      'Sollte ich die Töpfe von Hand spülen, obwohl sie spülmaschinengeeignet sind?',
+      'Should I hand wash the pots even if they are dishwasher-suitable?',
       'Ist das Quality One Topfset antihaftbeschichtet?',
-      'Ist dieses Topfset zum Kochen und Köcheln gedacht oder zum Braten?',
-      'Ist im Quality One Set eine Bratpfanne enthalten?',
-      'Welche WMF Pfanne sollte ich für Eier oder schonendes Braten ergänzen?',
-      'Welche WMF Pfanne sollte ich für Steak oder intensives Anbraten ergänzen?',
-      'Was ist der Unterschied zwischen Quality One und einem einfacheren Edelstahl-Topfset?',
+      'Is this pot set for boiling and simmering, or for frying?',
+      'Does the WMF Quality One 5-piece pot set include a frying pan?',
+      'Which WMF pan should I add for eggs or gentle frying?',
+      'Which WMF pan should I add for steak or intense searing?',
+      'What is the difference between Quality One and a simpler stainless-steel pot set?',
     ];
     all = all.sort((a, b) => {
       const aIndex = cookwarePriority.indexOf(a.question_draft);
