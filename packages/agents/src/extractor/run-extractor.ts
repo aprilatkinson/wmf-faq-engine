@@ -15,7 +15,6 @@ async function run(): Promise<void> {
     category: 'Cookware',
     product_family: 'Devil',
     priority: 'P1',
-    source_language: 'de',
   };
 
   const pko = await extractPartialPKO(intakeRow);

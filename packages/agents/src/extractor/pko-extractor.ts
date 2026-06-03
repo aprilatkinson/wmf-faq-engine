@@ -35,6 +35,29 @@ function normalizeTextItems(items: string[] = []): string[] {
     /eigenschaften?/i,
     /impressum/i,
     /cookie einstellungen/i,
+    /product advantages/i,
+    /product name/i,
+    /brand/i,
+    /outside coating/i,
+    /inside coating/i,
+    /raw material/i,
+    /dishwasher safe/i,
+    /hobs compatibility/i,
+    /heat source/i,
+    /oven compatibility/i,
+    /pouring edge/i,
+    /lid\(s\) material/i,
+    /handle type/i,
+    /cool\+ technology/i,
+    /dimensions \(w × h × l\)/i,
+    /article weight/i,
+    /package dimensions/i,
+    /operating manual/i,
+    /warranty declaration/i,
+    /suitable alternatives/i,
+    /ideal additions/i,
+    /free shipping/i,
+    /free returns/i,
   ];
 
   return Array.from(
@@ -50,15 +73,17 @@ function normalizeTextItems(items: string[] = []): string[] {
 function findLabelValuePairs(sourceLines: string[]): Record<string, string[]> {
   const pairs: Record<string, string[]> = {};
   const labelPatterns: Record<string, RegExp[]> = {
-    material: [/^\s*Material[:\-\s]+(.+)/i, /\bMaterial\b[:\-\s]*([^;\n]+)/i],
-    innenbeschichtung: [/^\s*Innenbeschichtung[:\-\s]+(.+)/i],
-    aussenbeschichtung: [/^\s*Außenbeschichtung[:\-\s]+(.+)/i, /^\s*Auenbeschichtung[:\-\s]+(.+)/i],
-    spuelmaschinen: [/Spülmaschinengeeignet[:\-\s]*([^;\n]+)/i, /Spülmaschinengeeignet\b/i],
-    kochfeldart: [/Kochfeldart[:\-\s]*([^;\n]+)/i, /Kochfeldart\b/i],
-    backofen: [/Backofenkompatibel[:\-\s]*([^;\n]+)/i, /Backofenkompatibel\b/i, /Backofenkompatibilität[:\-\s]*([^;\n]+)/i],
-    giesrand: [/Gießrand[:\-\s]*([^;\n]+)/i, /Gießrand\b/i],
-    grifftyp: [/Grifftyp[:\-\s]*([^;\n]+)/i, /Grifftyp\b/i],
-    cool: [/Cool\+\s*Technologie[:\-\s]*([^;\n]+)/i, /Cool\+\b/i],
+    material: [/^\s*Material[:\-\s]+(.+)/i, /Raw Material[:\-\s]+(.+)/i, /^\s*Material\s*\|\s*Raw Material[:\-\s]*(.+)/i],
+    innenbeschichtung: [/^\s*Innenbeschichtung[:\-\s]+(.+)/i, /Inside Coating\/finish[:\-\s]+(.+)/i],
+    aussenbeschichtung: [/^\s*Außenbeschichtung[:\-\s]+(.+)/i, /Outside coating\/finish[:\-\s]+(.+)/i, /^\s*Auenbeschichtung[:\-\s]+(.+)/i],
+    spuelmaschinen: [/Spülmaschinengeeignet[:\-\s]*([^;\n]+)/i, /Dishwasher Safe[:\-\s]*([^;\n]+)/i, /Dishwasher-safe[:\-\s]*([^;\n]+)/i, /Dishwasher safe[:\-\s]*([^;\n]+)/i, /Spülmaschinengeeignet\b/i, /Dishwasher Safe\b/i, /Dishwasher safe\b/i],
+    kochfeldart: [/Kochfeldart[:\-\s]*([^;\n]+)/i, /Hobs compatibility[:\-\s]*([^;\n]+)/i, /Heat source[:\-\s]*([^;\n]+)/i, /Kochfeldart\b/i],
+    backofen: [/Backofenkompatibel[:\-\s]*([^;\n]+)/i, /Backofenkompatibilität[:\-\s]*([^;\n]+)/i, /Oven compatibility[:\-\s]*([^;\n]+)/i, /Backofenkompatibel\b/i],
+    giesrand: [/Gießrand[:\-\s]*([^;\n]+)/i, /Pouring edge[:\-\s]*([^;\n]+)/i, /Gießrand\b/i, /Pouring edge\b/i],
+    grifftyp: [/Grifftyp[:\-\s]*([^;\n]+)/i, /Handle type[:\-\s]*([^;\n]+)/i, /Grifftyp\b/i],
+    cool: [/Cool\+\s*Technologie[:\-\s]*([^;\n]+)/i, /Cool\+\s*Technology[:\-\s]*([^;\n]+)/i, /Cool\+\b/i],
+    pouring_edge: [/Pouring edge[:\-\s]*([^;\n]+)/i, /Pouring edge\b/i],
+    lid_material: [/Lid(?:s)? material[:\-\s]*([^;\n]+)/i, /Lid(?:s)? material\b/i],
   };
 
   for (const line of sourceLines) {
@@ -80,20 +105,47 @@ function findLabelValuePairs(sourceLines: string[]): Record<string, string[]> {
 
 // Reusable labelPatterns for mapping DOM productDetails into the same keys
 const labelPatterns: Record<string, RegExp[]> = {
-  material: [/^\s*Material[:\-\s]+(.+)/i, /\bMaterial\b[:\-\s]*([^;\n]+)/i],
-  innenbeschichtung: [/^\s*Innenbeschichtung[:\-\s]+(.+)/i],
-  aussenbeschichtung: [/^\s*Außenbeschichtung[:\-\s]+(.+)/i, /^\s*Auenbeschichtung[:\-\s]+(.+)/i],
-  spuelmaschinen: [/Spülmaschinengeeignet[:\-\s]*([^;\n]+)/i, /Spülmaschinengeeignet\b/i],
-  kochfeldart: [/Kochfeldart[:\-\s]*([^;\n]+)/i, /Kochfeldart\b/i],
-  backofen: [/Backofenkompatibel[:\-\s]*([^;\n]+)/i, /Backofenkompatibel\b/i, /Backofenkompatibilität[:\-\s]*([^;\n]+)/i],
-  giesrand: [/Gießrand[:\-\s]*([^;\n]+)/i, /Gießrand\b/i],
-  grifftyp: [/Grifftyp[:\-\s]*([^;\n]+)/i, /Grifftyp\b/i],
-  cool: [/Cool\+\s*Technologie[:\-\s]*([^;\n]+)/i, /Cool\+\b/i],
+  material: [/^\s*Material[:\-\s]+(.+)/i, /Raw Material[:\-\s]+(.+)/i, /^\s*Material\s*\|\s*Raw Material[:\-\s]*(.+)/i],
+  innenbeschichtung: [/^\s*Innenbeschichtung[:\-\s]+(.+)/i, /Inside Coating\/finish[:\-\s]+(.+)/i],
+  aussenbeschichtung: [/^\s*Außenbeschichtung[:\-\s]+(.+)/i, /Outside coating\/finish[:\-\s]+(.+)/i, /^\s*Auenbeschichtung[:\-\s]+(.+)/i],
+  spuelmaschinen: [/Spülmaschinengeeignet[:\-\s]*([^;\n]+)/i, /Dishwasher Safe[:\-\s]*([^;\n]+)/i, /Dishwasher-safe[:\-\s]*([^;\n]+)/i, /Dishwasher safe[:\-\s]*([^;\n]+)/i, /Spülmaschinengeeignet\b/i, /Dishwasher Safe\b/i, /Dishwasher safe\b/i],
+  kochfeldart: [/Kochfeldart[:\-\s]*([^;\n]+)/i, /Hobs compatibility[:\-\s]*([^;\n]+)/i, /Heat source[:\-\s]*([^;\n]+)/i, /Kochfeldart\b/i],
+  backofen: [/Backofenkompatibel[:\-\s]*([^;\n]+)/i, /Backofenkompatibilität[:\-\s]*([^;\n]+)/i, /Oven compatibility[:\-\s]*([^;\n]+)/i, /Backofenkompatibel\b/i],
+  giesrand: [/Gießrand[:\-\s]*([^;\n]+)/i, /Pouring edge[:\-\s]*([^;\n]+)/i, /Gießrand\b/i, /Pouring edge\b/i],
+  grifftyp: [/Grifftyp[:\-\s]*([^;\n]+)/i, /Handle type[:\-\s]*([^;\n]+)/i, /Grifftyp\b/i],
+  cool: [/Cool\+\s*Technologie[:\-\s]*([^;\n]+)/i, /Cool\+\s*Technology[:\-\s]*([^;\n]+)/i, /Cool\+\b/i],
+  pouring_edge: [/Pouring edge[:\-\s]*([^;\n]+)/i, /Pouring edge\b/i],
+  lid_material: [/Lid(?:s)? material[:\-\s]*([^;\n]+)/i, /Lid(?:s)? material\b/i],
 };
 
 function inferLanguage(intakeRow: IntakeRow, sourceUrl: string): { language: SourceLanguage; confidence: number } {
+  const known = ['de', 'en', 'es', 'nl', 'fr'];
+  let pathLanguage: SourceLanguage | undefined;
+
+  try {
+    const url = new URL(sourceUrl);
+    const segments = url.pathname.split('/').filter(Boolean) as string[];
+    const segment1 = segments[1] ?? '';
+    const segment0 = segments[0] ?? '';
+
+    if (segment1 && known.includes(segment1.toLowerCase())) {
+      pathLanguage = segment1.toLowerCase() as SourceLanguage;
+    } else if (segment0 && known.includes(segment0.toLowerCase())) {
+      pathLanguage = segment0.toLowerCase() as SourceLanguage;
+    }
+  } catch {
+    // fall back to heuristic below
+  }
+
   if (intakeRow.source_language) {
+    if (pathLanguage && pathLanguage !== intakeRow.source_language.toLowerCase()) {
+      return { language: pathLanguage, confidence: 0.85 };
+    }
     return { language: intakeRow.source_language, confidence: 0.95 };
+  }
+
+  if (pathLanguage) {
+    return { language: pathLanguage, confidence: 0.85 };
   }
 
   const localeMatch = sourceUrl.match(/\/(de|en|es|nl|fr)(?:\/|$)/i);
@@ -140,7 +192,7 @@ export function createPartialPKO(intakeRow: IntakeRow, pageData: CrawledPageData
   const materials = normalizeTextItems(pairs.material || []);
 
   // Coatings and feature-like attributes go to features
-  const coatingFeatures = normalizeTextItems([...(pairs.innenbeschichtung || []), ...(pairs.aussenbeschichtung || []), ...(pairs.giesrand || []), ...(pairs.grifftyp || []), ...(pairs.cool || [])]);
+  const coatingFeatures = normalizeTextItems([...(pairs.innenbeschichtung || []), ...(pairs.aussenbeschichtung || []), ...(pairs.giesrand || []), ...(pairs.grifftyp || []), ...(pairs.cool || []), ...(pairs.pouring_edge || []), ...(pairs.lid_material || [])]);
   features = normalizeTextItems([...features, ...coatingFeatures]);
 
   // Remove any residual label:value lines from features (e.g. "Material: Edelstahl").
@@ -162,6 +214,10 @@ export function createPartialPKO(intakeRow: IntakeRow, pageData: CrawledPageData
   const labelOnly = [
     'CMMF', 'EAN', 'Marke', 'Material', 'Innenbeschichtung', 'Außenbeschichtung', 'Spülmaschinengeeignet',
     'Kochfeldart', 'Backofenkompatibilität', 'Gießrand', 'Grifftyp', 'Cool+ Technologie', 'Maße', 'Artikelgewicht', 'Paketmaße',
+    'Product advantages', 'Product Name', 'Brand', 'Outside coating/finish', 'Oven compatibility', 'Inside Coating/finish',
+    'Material | Raw Material', 'Dishwasher Safe', 'Hobs compatibility | Heat source', 'Pouring edge', 'Lid(s) material',
+    'Handle type', 'Cool+ Technology', 'Dimensions (W × H × L)', 'Article Weight', 'Package Dimensions (W × H × D)',
+    'Operating Manual', 'Warranty Declaration', 'SUITABLE ALTERNATIVES', 'IDEAL ADDITIONS',
   ];
 
   const navPhrases = [
@@ -196,7 +252,7 @@ export function createPartialPKO(intakeRow: IntakeRow, pageData: CrawledPageData
       }
 
       // standalone boolean values should be removed unless the caller explicitly keeps them
-      if (!keepSingleBooleanAsValue && (lower === 'ja' || lower === 'nein')) return false;
+      if (!keepSingleBooleanAsValue && (lower === 'ja' || lower === 'nein' || lower === 'yes' || lower === 'no')) return false;
 
       return true;
     });
