@@ -1,6 +1,7 @@
 export * from './extractor/url-crawler';
 export * from './extractor/pko-extractor';
 export * from './extractor/claim-risk';
+export * from './benefit-mapper';
 
 import type { IntakeRow } from '../../core/src/types/intake';
 import type { ProductKnowledgeObject } from '../../core/src/types/pko';
