@@ -17,12 +17,15 @@ function createCoffeePkoFixture(): ProductKnowledgeObject {
     features: [
       'Milk drinks with temperature expectation guidance',
       'Milk foam texture settings',
+      'Display and interface guide preparation and cleaning',
       'Cleaning program with automatic rinsing',
       'Descaling reminders',
-      'Water quality and filter guidance',
-      'Personalization and favorites',
+      'Water quality, water filter, and limescale guidance',
+      'Personalization of coffee strength, aroma, milk amount, and temperature',
+      'Favorites for saved coffee recipes',
       'App optionality without requiring app use',
       'Multiple user profiles',
+      'Quiet grinding and reduced vibration for open kitchen noise expectations',
       'Fresh grinding for coffee beans',
       'Cups, filters, and accessories for optimization',
     ],
@@ -50,6 +53,14 @@ function createCoffeePkoFixture(): ProductKnowledgeObject {
         source_confidence: 'high',
       },
       {
+        feature: 'Display and guided interface',
+        mechanism: 'The display guides coffee preparation and cleaning prompts.',
+        outcome: 'Makes everyday operation easier to understand.',
+        use_case: 'Daily home use and maintenance.',
+        buyer_relevance: 'Reduces review anxiety about ease of use.',
+        source_confidence: 'high',
+      },
+      {
         feature: 'Cleaning and automatic rinsing',
         mechanism: 'Automatic rinsing supports regular maintenance.',
         outcome: 'Helps keep the milk and coffee system clean.',
@@ -67,7 +78,7 @@ function createCoffeePkoFixture(): ProductKnowledgeObject {
       },
       {
         feature: 'Water quality',
-        mechanism: 'Water quality and filter use influence limescale and taste expectations.',
+        mechanism: 'Water quality and filter use influence limescale buildup and taste expectations.',
         outcome: 'Helps buyers optimize coffee quality.',
         use_case: 'Setup and ongoing care.',
         buyer_relevance: 'Supports better daily results.',
@@ -75,7 +86,7 @@ function createCoffeePkoFixture(): ProductKnowledgeObject {
       },
       {
         feature: 'Personalization and favorites',
-        mechanism: 'Favorite settings help repeat preferred drinks.',
+        mechanism: 'Coffee strength, aroma, milk amount, temperature, and favorite settings help repeat preferred drinks.',
         outcome: 'Makes repeated drink preparation more convenient.',
         use_case: 'Daily household coffee routines.',
         buyer_relevance: 'Supports individual preferences.',
@@ -91,10 +102,18 @@ function createCoffeePkoFixture(): ProductKnowledgeObject {
       },
       {
         feature: 'Multiple users',
-        mechanism: 'User profiles help separate preferences.',
+        mechanism: 'User profiles and saved favorite drinks help separate preferences.',
         outcome: 'Different household members can keep preferred settings distinct.',
         use_case: 'Shared kitchens.',
         buyer_relevance: 'Supports multi-user households.',
+        source_confidence: 'high',
+      },
+      {
+        feature: 'Quiet grinding and reduced vibration',
+        mechanism: 'Noise during grinding and brewing is an open-kitchen buying concern.',
+        outcome: 'Helps buyers set realistic expectations about sound during use.',
+        use_case: 'Open kitchens and shared living spaces.',
+        buyer_relevance: 'Reduces review anxiety about machine noise.',
         source_confidence: 'high',
       },
       {
@@ -116,20 +135,25 @@ function createCoffeePkoFixture(): ProductKnowledgeObject {
     ],
     benefits_explicit: [
       'Milk drinks can feel cooler than black coffee because milk changes the perceived drink temperature.',
-      'Beverage temperature adjustment is a supported buyer question in this approved fixture.',
+      'Display guidance supports coffee preparation and cleaning support questions.',
+      'Coffee strength, aroma, milk amount, and temperature personalization are supported buyer questions in this approved fixture.',
       'Cleaning and automatic rinsing reduce uncertainty about daily care.',
-      'Descaling and water quality guidance support consistent operation.',
+      'Descaling, filtered water, water quality, and limescale guidance support consistent operation.',
       'Favorites and multiple users support household personalization.',
+      'Quiet grinding and reduced vibration support open kitchen and noise expectation questions.',
       'Fresh grinding helps buyers understand beans and aroma expectations.',
       'Cups, filters, and accessories help optimize everyday use.',
     ],
     benefits_missing: [],
     warranty_service: [],
     use_cases: [
+      'Everyday home use',
       'Milk drinks and temperature expectation support',
+      'Display-guided preparation and cleaning',
       'Cleaning, rinsing, and descaling support',
-      'Water quality optimization',
+      'Filtered water, water quality, and limescale optimization',
       'Personalization for multiple users',
+      'Open kitchen noise expectation support',
       'Coffee beans and fresh grinding',
       'Accessories and filters optimization',
     ],
@@ -155,19 +179,36 @@ describe('Coffee-machine quality fixture readiness', () => {
 
     expect(supportedQuestions).toEqual(
       expect.arrayContaining([
-        expect.stringMatching(/Milchgetränke.*Temperaturerwartungen/i),
-        expect.stringMatching(/Milchgetränke kühler.*schwarzer Kaffee/i),
-        expect.stringMatching(/Getränketemperatur angepasst/i),
-        expect.stringMatching(/Reinigung.*automatisches Spülen/i),
-        expect.stringMatching(/Entkalken/i),
-        expect.stringMatching(/Wasserqualität/i),
-        expect.stringMatching(/Personalisierung.*Favoriten/i),
-        expect.stringMatching(/App.*erforderlich/i),
-        expect.stringMatching(/mehrere Nutzer/i),
+        expect.stringMatching(/täglichen Gebrauch zu Hause/i),
+        expect.stringMatching(/leicht zu bedienen/i),
+        expect.stringMatching(/Display.*Kaffeezubereitung.*Reinigung/i),
+        expect.stringMatching(/Kaffeestärke.*Aroma.*Milchmenge.*Temperatur/i),
+        expect.stringMatching(/Lieblings-Kaffeerezepte speichern/i),
+        expect.stringMatching(/mehrere Personen.*Lieblingsgetränke/i),
+        expect.stringMatching(/App.*benutzen/i),
+        expect.stringMatching(/laut.*Mahlen.*Brühen/i),
+        expect.stringMatching(/offenen Küche.*zu laut/i),
+        expect.stringMatching(/gefiltertes Wasser/i),
+        expect.stringMatching(/Wasserqualität.*Geschmack.*Kalkbildung/i),
+        expect.stringMatching(/Milchschaum.*kühler.*schwarzer Kaffee/i),
+        expect.stringMatching(/Reinigung.*Spülen.*Entkalken/i),
         expect.stringMatching(/Kaffeebohnen.*frisches Mahlen/i),
         expect.stringMatching(/Zubehörteile.*Optimierung/i),
       ]),
     );
+  });
+
+  it('does not surface weak or disconnected coffee strategy questions', () => {
+    const pko = createCoffeePkoFixture();
+    const plan = createFaqPlan(pko, { targetFaqCount: 20 });
+    const questions = plan.map((item) => item.question_draft).join('\n');
+
+    expect(questions).not.toMatch(/professional gastronomy|professionelle gastronomie/i);
+    expect(questions).not.toMatch(/beginner-friendly|anfängerfreundlich/i);
+    expect(questions).not.toMatch(/coffee enthusiasts|kaffeeenthusiasten/i);
+    expect(questions).not.toMatch(/why is quieter operation important|warum ist.*leiser betrieb.*wichtig/i);
+    expect(questions).not.toMatch(/suitable for open kitchens|geeignet für offene küchen/i);
+    expect(questions).not.toMatch(/does water quality influence coffee taste|beeinflusst wasserqualität den kaffeegeschmack/i);
   });
 
   it('generates schema-valid coffee fixture FAQs without unsafe coffee or electronics claims', () => {
