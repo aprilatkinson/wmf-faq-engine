@@ -49,9 +49,42 @@ describe('Benefit Mapper', () => {
       }),
       expect.objectContaining({
         feature: 'Handle type: fixed handle',
-        source_confidence: 'high',
+        source_confidence: 'low',
       }),
     ]));
+  });
+
+  it('does not positively map Cool+ Technologie when the PKO feature is generic', () => {
+    const pko: ProductKnowledgeObject = {
+      pko_id: 'pko-coolplus-1',
+      source_url: 'https://www.wmf.com/de/de/example.html',
+      product_name: 'Example Pan',
+      category: 'Cookware',
+      product_family: 'Example',
+      source_language_detected: 'de',
+      source_language_confidence: 0.85,
+      features: ['Cool+ Technologie', 'Handle type: fixed handle'],
+      materials: [],
+      compatibility: [],
+      care_instructions: [],
+      fmo_mappings: [],
+      benefits_explicit: [],
+      benefits_missing: [],
+      warranty_service: [],
+      use_cases: [],
+      claims_flagged: [],
+      page_weaknesses: [],
+      knowledgebase_chunks_used: [],
+      pko_version: '1.0.0',
+      created_at: new Date().toISOString(),
+    };
+
+    const mappings = mapPkoToFmoMappings(pko);
+
+    expect(mappings.some((m) => m.feature === 'Cool+ Technologie')).toBe(false);
+    expect(mappings.some((m) => m.feature === 'Handle type: fixed handle')).toBe(true);
+    expect(mappings.find((m) => m.feature === 'Handle type: fixed handle')?.source_confidence).toBe('low');
+    expect(mappings.find((m) => m.feature === 'Handle type: fixed handle')?.mechanism).toContain('permanently attached');
   });
 
   it('maps English cookware set PKO features and returns set-level buyer value', () => {
