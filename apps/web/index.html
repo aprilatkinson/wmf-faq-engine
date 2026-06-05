@@ -1,0 +1,114 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>FAQ Engine Local Preview</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <main class="workspace">
+      <section class="toolbar">
+        <div>
+          <h1>FAQ Job Workspace</h1>
+          <p>Local deterministic preview. No live models, external services, database, or authentication are used.</p>
+        </div>
+        <span class="status-pill">Local demo</span>
+      </section>
+
+      <section class="grid">
+        <form id="job-form" class="panel">
+          <h2>Job Setup</h2>
+          <label>
+            Single URL
+            <input id="single-url" type="url" placeholder="https://www.wmf.com/..." />
+          </label>
+          <label>
+            Paste URL list
+            <textarea id="url-list" rows="7" placeholder="One URL per line"></textarea>
+          </label>
+
+          <fieldset>
+            <legend>Target Languages</legend>
+            <label><input type="checkbox" name="language" value="de" checked disabled /> German DE</label>
+            <label><input type="checkbox" name="language" value="en" /> English EN</label>
+            <label><input type="checkbox" name="language" value="es" /> Spanish ES</label>
+            <label><input type="checkbox" name="language" value="nl" /> Dutch NL</label>
+            <label><input type="checkbox" name="language" value="fr" /> French FR</label>
+          </fieldset>
+
+          <div class="split">
+            <label>
+              Run Mode
+              <select id="run-mode">
+                <option value="lean">lean</option>
+                <option value="standard">standard</option>
+                <option value="premium-p1">premium-p1</option>
+              </select>
+            </label>
+            <label>
+              Max FAQ Count
+              <select id="max-faq-count">
+                <option value="12">12</option>
+                <option value="20">20</option>
+              </select>
+            </label>
+          </div>
+
+          <label>
+            Cost Ceiling EUR
+            <input id="cost-ceiling" type="number" min="0" step="1" value="50" />
+          </label>
+
+          <div class="actions">
+            <button type="button" id="estimate-button">Estimate cost</button>
+            <button type="button" id="run-button">Generate FAQ Preview</button>
+          </div>
+        </form>
+
+        <section class="panel">
+          <h2>Cost Estimate</h2>
+          <dl id="cost-panel" class="metrics"></dl>
+        </section>
+
+        <section class="panel result-panel">
+          <h2>Job Result</h2>
+          <div id="mode-note" class="notice">Run a deterministic preview to see results.</div>
+          <dl id="result-panel" class="metrics"></dl>
+          <div id="pause-warning" class="warning" hidden>Quality checkpoint suggests pausing before continuing.</div>
+          <div id="cost-blocked-message" class="warning" hidden>Cost confirmation is required before processing. No FAQ preview is available yet.</div>
+          <section id="faq-preview-panel" class="faq-preview" hidden>
+            <div class="preview-header">
+              <div>
+                <h3>FAQ Preview</h3>
+                <p>Preview uses deterministic local mode. Final LLM generation is not connected yet.</p>
+              </div>
+              <div class="preview-controls">
+                <button type="button" id="preview-previous">Previous</button>
+                <span id="faq-preview-position">Product 0 of 0</span>
+                <button type="button" id="preview-next">Next</button>
+              </div>
+            </div>
+            <div id="faq-preview-empty" class="notice" hidden>No FAQ preview is available yet.</div>
+            <div id="faq-preview-content">
+              <dl id="faq-preview-meta" class="metrics"></dl>
+              <div id="faq-preview-list" class="faq-card-list"></div>
+            </div>
+          </section>
+          <section id="workbook-tabs-section">
+            <h3>Workbook Tabs</h3>
+            <table>
+              <thead>
+                <tr><th>Tab</th><th>Rows</th></tr>
+              </thead>
+              <tbody id="tab-table"></tbody>
+            </table>
+            <button type="button" id="download-button" disabled>Download workbook XML</button>
+          </section>
+        </section>
+      </section>
+    </main>
+    <script src="./local-preview-browser.js"></script>
+    <script src="./app.js"></script>
+  </body>
+</html>

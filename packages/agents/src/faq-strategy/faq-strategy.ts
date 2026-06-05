@@ -308,11 +308,9 @@ export function createFaqPlan(pko: ProductKnowledgeObject, options: StrategyOpti
     induction: hasFeature([/induction|induktion/i]),
     // treat cleaning as supported when care instructions exist even if not explicitly 'dishwasher'
     dishwasher: hasFeature([/spülmaschinen|dishwasher|Spülmaschinen/i]) || pko.care_instructions.length > 0,
-    // allow oven question to surface as a common consumer intent if there is any PKO evidence
-    oven: hasFeature([/oven|backofen|backofengeeignet|backofenkompatibel/i]) || hasFeature([/\d{2,3}\s?°C/]) || evidence.length > 0,
+    oven: hasFeature([/oven|backofen|backofengeeignet|backofenkompatibel/i]) || hasFeature([/\d{2,3}\s?°C/]),
     pouring: hasFeature([/Gießrand|Giesrand|pouring edge|pouring rim/i]),
-    // surface handle as an intent when there is general PKO evidence so writer can safely fallback
-    handle: hasFeature([/handle|griff|soft[-\s]?touch|fixed handle/i]) || evidence.length > 0,
+    handle: hasFeature([/handle|griff|soft[-\s]?touch|fixed handle|cool\+/i]),
   };
 
   for (const f of featureChecks) {

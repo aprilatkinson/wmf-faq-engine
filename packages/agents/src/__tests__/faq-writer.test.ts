@@ -4,7 +4,7 @@ import { faqItemSchema } from '../../../core/src/schemas/faq.schema';
 import type { ProductKnowledgeObject } from '../../../core/src/types/pko';
 
 describe('FAQ Writer scaffold', () => {
-  it('generates 12 German master FAQ items from a complete PKO', () => {
+  it('generates German master FAQ items up to the maximum from a complete PKO', () => {
     const pko: ProductKnowledgeObject = {
       pko_id: 'pko-devil-sample',
       source_url: 'https://www.wmf.com/de/de/devil-bratpfannen-set-3-teilig-20-cm-24-cm-28-cm-3201113818.html',
@@ -39,7 +39,8 @@ describe('FAQ Writer scaffold', () => {
     };
 
     const faqs = generateFaqItems(pko);
-    expect(faqs).toHaveLength(12);
+    expect(faqs.length).toBeGreaterThan(0);
+    expect(faqs.length).toBeLessThanOrEqual(12);
     for (const faq of faqs) {
       expect(faq.language).toBe('de');
       expect(faq.is_master).toBe(true);
@@ -57,27 +58,29 @@ describe('FAQ Writer scaffold', () => {
       );
       expect(faq.schema_ready).toBe(true);
       expect(faq.source_evidence.length).toBeGreaterThan(0);
-      expect(faq.answer).not.toMatch(/dishwasher-safe|scratch-proof|PFAS-free|PFOA-free|PTFE-free|professional quality|lifetime durability|Cool\+/i);
+      expect(faq.answer).not.toMatch(/dishwasher-safe|scratch-proof|PFAS-free|PFOA-free|PTFE-free|professional quality|lifetime durability/i);
       // disallow internal architecture terms and data-layer words
       expect(faq.answer).not.toMatch(/architektur|feature flag|agent|backend|frontend|API|PKO|FMO|Mapping|EvidenceBundle|Rohdaten/i);
       // disallow unverified durability language
       expect(faq.answer).not.toMatch(/langlebig/i);
+      expect(faq.answer).not.toMatch(/preview|deterministic|grouping logic|category playbook|product context|FAQ engine|URL does not provide|do not present|unless the product details confirm|the answer should|when supported|when visible|evidence is missing/i);
       expect(() => faqItemSchema.parse(faq)).not.toThrow();
     }
 
-    // Ensure oven question does not claim suitability when PKO lacks explicit oven compatibility
+    const supportedHandleFaq = faqs.find((f) => /Griff|handle|Cool\+/i.test(f.question));
+    expect(supportedHandleFaq).toBeDefined();
+    expect(supportedHandleFaq!.answer).toMatch(/Cool\+/);
+    expect(supportedHandleFaq!.answer).not.toMatch(/never hot|niemals heiß|nie heiß|wird nicht heiß/i);
+
+    // Ensure oven question is skipped when PKO lacks explicit oven compatibility
     const ovenFaq = faqs.find((f) => /Backofen/i.test(f.question));
-    expect(ovenFaq).toBeDefined();
-    expect(ovenFaq!.answer).toMatch(/keine eindeutige Information|prüfen Sie die Herstellerangaben/i);
+    expect(ovenFaq).toBeUndefined();
 
     // Create a PKO without handle features to test fallback wording
     const pkoNoHandle: ProductKnowledgeObject = { ...pko, pko_id: 'pko-no-handle', features: ['PTFE', 'Keramik'], product_name: 'Devil Frying Pan Single' };
     const faqsNoHandle = generateFaqItems(pkoNoHandle);
     const handleFaq = faqsNoHandle.find((f) => /Handhabung des Griffs|Griffoption/i.test(f.question) || /Handhabung des Griffs|Griff/i.test(f.question));
-    expect(handleFaq).toBeDefined();
-    // Fallback must not claim comfort or safety when not supported
-    expect(handleFaq!.answer).not.toMatch(/sicher|komfortabel|komfortable/i);
-    expect(handleFaq!.answer).toMatch(/keine eindeutige Angabe/i);
+    expect(handleFaq).toBeUndefined();
 
   });
 });

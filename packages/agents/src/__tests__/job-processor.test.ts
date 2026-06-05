@@ -15,6 +15,23 @@ function createIntakeRows(count: number): IntakeRow[] {
   }));
 }
 
+function createVariantPanRows(count: number): IntakeRow[] {
+  const sizes = [20, 24, 28];
+  return Array.from({ length: count }, (_, index) => {
+    const size = sizes[index % sizes.length];
+    return {
+      row_id: `variant-row-${index + 1}`,
+      product_id: `devil-non-stick-pan-${size}-${index + 1}`,
+      url: `https://example.com/wmf-devil-non-stick-frying-pan-${size}-cm?variant=${index + 1}`,
+      page_type: 'PDP',
+      category: 'Cookware',
+      product_family: 'Devil',
+      priority: 'P2',
+      source_language: 'de',
+    };
+  });
+}
+
 function processUrlCount(count: number) {
   return processBatchJob({
     job_id: `job-${count}`,
@@ -84,6 +101,43 @@ describe('Phase 9 batch job processor starter', () => {
     expect(result.sub_batches[0].preview_export?.projected_full_job_cost).toBe(result.cost_profile.client_cost_estimate);
     expect(result.sub_batches[0].preview_export?.tabs.find((tab) => tab.name === 'Product Intake')?.rows).toHaveLength(12);
     expect(result.final_export?.tabs.find((tab) => tab.name === 'Product Intake')?.rows).toHaveLength(13);
+  });
+
+  it('includes variant grouping fields in the cost estimate', () => {
+    const result = processBatchJob({
+      job_id: 'job-variant-cost',
+      intake_rows: createVariantPanRows(3),
+      target_languages: ['de'],
+      run_mode: 'lean',
+      continue_after_warning: true,
+    });
+
+    expect(result.cost_estimate.url_count).toBe(3);
+    expect(result.cost_estimate.variant_group_count).toBe(1);
+    expect(result.cost_estimate.estimated_generation_units).toBe(1);
+    expect(result.cost_estimate.estimated_savings_from_grouping).toBe(2);
+    expect(result.variant_groups).toHaveLength(1);
+    expect(result.variant_groups[0].requires_unique_generation).toBe(false);
+  });
+
+  it('reduces 300 near-duplicate URLs below URL count while preserving per-URL export rows', () => {
+    const result = processBatchJob({
+      job_id: 'job-variant-300',
+      intake_rows: createVariantPanRows(300),
+      target_languages: ['de'],
+      run_mode: 'lean',
+      continue_after_warning: true,
+    });
+
+    expect(result.cost_estimate.url_count).toBe(300);
+    expect(result.cost_estimate.variant_group_count).toBeLessThan(300);
+    expect(result.cost_estimate.estimated_generation_units).toBeLessThan(300);
+    expect(result.cost_estimate.estimated_savings_from_grouping).toBeGreaterThan(0);
+    expect(result.sub_batches).toHaveLength(25);
+    expect(result.accumulated_rows).toHaveLength(300);
+    expect(result.accumulated_rows.every((row) => row.variant_group_key === result.variant_groups[0].variant_group_key)).toBe(true);
+    expect(result.accumulated_rows.every((row) => row.canonical_url === result.variant_groups[0].canonical_url)).toBe(true);
+    expect(result.final_export?.tabs.find((tab) => tab.name === 'Product Intake')?.rows).toHaveLength(300);
   });
 
   it('blocks processing at cost estimate until confirmed when cost exceeds ceiling', () => {

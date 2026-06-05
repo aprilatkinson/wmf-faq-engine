@@ -6,6 +6,8 @@ import { mapPkoToFmoMappings } from '../benefit-mapper';
 import { generateFaqItems } from '../faq-writer/faq-writer';
 import { runRevisionLoop } from '../revision-loop';
 import { localizeFaqItems } from '../localization';
+import { groupIntakeRows, type VariantGroupMetadata } from '../variant-grouping';
+import { adaptFaqsForVariant } from '../variant-adapter';
 import { exportJobWorkbook, type AccumulatedJobUrlRow, type JobWorkbook } from '../../../exporters/src';
 
 export const JOB_STATUSES = [
@@ -25,6 +27,9 @@ export type RunMode = 'lean' | 'standard' | 'premium-p1';
 export interface CostEstimate {
   run_mode: RunMode;
   url_count: number;
+  variant_group_count: number;
+  estimated_generation_units: number;
+  estimated_savings_from_grouping: number;
   base_tokens_per_url: number;
   selected_language_count: number;
   non_de_language_count: number;
@@ -86,7 +91,7 @@ export interface InternalSubBatchResult {
   sub_batch_id: string;
   index: number;
   row_count: number;
-  rows: AccumulatedJobUrlRow[];
+  rows: JobAccumulatedUrlRow[];
   quality_summary: QualitySummary;
   preview_export?: JobPreviewWorkbook;
 }
@@ -97,8 +102,9 @@ export interface JobProcessorResult {
   statuses: JobStatus[];
   cost_estimate: CostEstimate;
   cost_profile: CostProfile;
+  variant_groups: VariantGroupMetadata[];
   sub_batches: InternalSubBatchResult[];
-  accumulated_rows: AccumulatedJobUrlRow[];
+  accumulated_rows: JobAccumulatedUrlRow[];
   preview_exports: JobPreviewWorkbook[];
   final_export?: JobWorkbook;
   warnings: string[];
@@ -106,6 +112,15 @@ export interface JobProcessorResult {
 
 export interface JobPreviewWorkbook extends JobWorkbook {
   projected_full_job_cost: number;
+}
+
+export interface JobAccumulatedUrlRow extends AccumulatedJobUrlRow {
+  variant_group_key: string;
+  canonical_url: string;
+  variant_urls: string[];
+  variant_dimensions: string[];
+  grouping_reason: string;
+  requires_unique_generation: boolean;
 }
 
 const SUB_BATCH_SIZE = 12;
@@ -159,20 +174,26 @@ function expectedFailingItems(urlCount: number, maxFaqCount: number, mode: RunMo
   return Math.ceil(urlCount * maxFaqCount * expectedFailureRate);
 }
 
+function estimatedGenerationUnits(groups: VariantGroupMetadata[]): number {
+  return groups.reduce((sum, group) => sum + (group.requires_unique_generation ? group.variant_urls.length : 1), 0);
+}
+
 export function estimateJobCost(
   options: Pick<JobProcessorOptions, 'intake_rows' | 'target_languages' | 'run_mode' | 'max_faq_count' | 'strategy_review_enabled' | 'cost_ceiling_eur'>,
 ): CostEstimate {
   const mode = runMode(options);
   const url_count = options.intake_rows.length;
+  const variantGrouping = groupIntakeRows(options.intake_rows);
+  const generation_units = estimatedGenerationUnits(variantGrouping.groups);
   const max_faq_count = maxFaqCountForRun(options);
   const base_tokens_per_url = tokensPerUrl(mode);
   const target_languages = normalizeTargetLanguages(options.target_languages, mode);
   const non_de_language_count = target_languages.filter((language) => language !== 'de').length;
   const localization_tokens = url_count * non_de_language_count * LOCALIZATION_TOKENS_PER_URL_LANGUAGE;
-  const failing_items = expectedFailingItems(url_count, max_faq_count, mode);
+  const failing_items = expectedFailingItems(generation_units, max_faq_count, mode);
   const rewrite_tokens = failing_items * REWRITE_TOKENS_PER_EXPECTED_FAILURE;
-  const strategy_review_tokens = mode === 'premium-p1' && options.strategy_review_enabled ? url_count * STRATEGY_REVIEW_TOKENS_PER_URL : 0;
-  const estimated_tokens = url_count * base_tokens_per_url + localization_tokens + rewrite_tokens + strategy_review_tokens;
+  const strategy_review_tokens = mode === 'premium-p1' && options.strategy_review_enabled ? generation_units * STRATEGY_REVIEW_TOKENS_PER_URL : 0;
+  const estimated_tokens = generation_units * base_tokens_per_url + localization_tokens + rewrite_tokens + strategy_review_tokens;
   const cost_ceiling_eur = options.cost_ceiling_eur ?? DEFAULT_COST_CEILING_EUR;
   const provider_cost_estimate = Number(((estimated_tokens / 1000) * EUR_PER_1K_TOKENS).toFixed(4));
   const client_cost_estimate = Number((provider_cost_estimate * (1 + MARGIN_RATE)).toFixed(4));
@@ -180,6 +201,9 @@ export function estimateJobCost(
   return {
     run_mode: mode,
     url_count,
+    variant_group_count: variantGrouping.groups.length,
+    estimated_generation_units: generation_units,
+    estimated_savings_from_grouping: Math.max(0, url_count - generation_units),
     base_tokens_per_url,
     selected_language_count: target_languages.length,
     non_de_language_count,
@@ -245,7 +269,30 @@ function defaultExtractPko(intake: IntakeRow): ProductKnowledgeObject {
   };
 }
 
-function processIntakeRow(intake: IntakeRow, options: JobProcessorOptions, targetLanguages: SourceLanguage[]): AccumulatedJobUrlRow {
+function cloneFaqItemsForIntake(faqItems: FaqItem[], intake: IntakeRow): FaqItem[] {
+  return faqItems.map((faq, index) => ({
+    ...faq,
+    faq_id: `${intake.row_id}-${faq.language}-${index + 1}`,
+    pko_id: `pko-${intake.row_id}`,
+  }));
+}
+
+function rowWithVariantMetadata(
+  base: AccumulatedJobUrlRow,
+  variantGroup: VariantGroupMetadata,
+): JobAccumulatedUrlRow {
+  return {
+    ...base,
+    variant_group_key: variantGroup.variant_group_key,
+    canonical_url: variantGroup.canonical_url,
+    variant_urls: variantGroup.variant_urls,
+    variant_dimensions: variantGroup.variant_dimensions,
+    grouping_reason: variantGroup.grouping_reason,
+    requires_unique_generation: variantGroup.requires_unique_generation,
+  };
+}
+
+function generateFaqItemsForIntake(intake: IntakeRow, options: JobProcessorOptions, targetLanguages: SourceLanguage[]): FaqItem[] {
   const extractPko = options.extractPko ?? defaultExtractPko;
   const extractedPko = extractPko(intake);
   const fmo_mappings = extractedPko.fmo_mappings.length > 0 ? extractedPko.fmo_mappings : mapPkoToFmoMappings(extractedPko);
@@ -254,13 +301,37 @@ function processIntakeRow(intake: IntakeRow, options: JobProcessorOptions, targe
   const nonDeLanguages = targetLanguages.filter((language) => language !== 'de');
   const localizedFaqs = nonDeLanguages.length > 0 ? localizeFaqItems(masterFaqs, nonDeLanguages) : [];
   const selectedLanguages = new Set(targetLanguages);
-  const faq_items: FaqItem[] = [...masterFaqs, ...localizedFaqs].filter((faq) => selectedLanguages.has(faq.language));
+  return [...masterFaqs, ...localizedFaqs].filter((faq) => selectedLanguages.has(faq.language));
+}
 
-  return {
-    job_id: options.job_id,
-    intake,
-    faq_items,
-  };
+function processIntakeRow(
+  intake: IntakeRow,
+  options: JobProcessorOptions,
+  targetLanguages: SourceLanguage[],
+  variantGroup: VariantGroupMetadata,
+  faqCache: Map<string, FaqItem[]>,
+): JobAccumulatedUrlRow {
+  const shouldUseGroupGeneration = !variantGroup.requires_unique_generation;
+  const cacheKey = variantGroup.variant_group_key;
+  const cachedFaqItems = shouldUseGroupGeneration ? faqCache.get(cacheKey) : undefined;
+  const baseFaqItems = cachedFaqItems
+    ? cloneFaqItemsForIntake(cachedFaqItems, intake)
+    : generateFaqItemsForIntake(intake, options, targetLanguages);
+
+  if (shouldUseGroupGeneration && !cachedFaqItems) {
+    faqCache.set(cacheKey, baseFaqItems);
+  }
+
+  const faq_items = adaptFaqsForVariant(baseFaqItems, intake, variantGroup);
+
+  return rowWithVariantMetadata(
+    {
+      job_id: options.job_id,
+      intake,
+      faq_items,
+    },
+    variantGroup,
+  );
 }
 
 function average(values: number[]): number {
@@ -314,6 +385,7 @@ function previewRows(options: JobProcessorOptions, rows: AccumulatedJobUrlRow[],
 export function processBatchJob(options: JobProcessorOptions): JobProcessorResult {
   const statuses: JobStatus[] = [assertValidStatus('Uploaded'), assertValidStatus('Validating')];
   const targetLanguages = normalizeTargetLanguages(options.target_languages, runMode(options));
+  const variantGrouping = groupIntakeRows(options.intake_rows);
   const cost_estimate = estimateJobCost(options);
   const cost_profile = createCostProfile(options, cost_estimate);
 
@@ -325,6 +397,7 @@ export function processBatchJob(options: JobProcessorOptions): JobProcessorResul
       statuses,
       cost_estimate,
       cost_profile,
+      variant_groups: variantGrouping.groups,
       sub_batches: [],
       accumulated_rows: [],
       preview_exports: [],
@@ -334,11 +407,15 @@ export function processBatchJob(options: JobProcessorOptions): JobProcessorResul
 
   statuses.push(assertValidStatus('Queued'), assertValidStatus('Processing'));
 
-  const accumulated_rows: AccumulatedJobUrlRow[] = [];
+  const accumulated_rows: JobAccumulatedUrlRow[] = [];
   const preview_exports: JobPreviewWorkbook[] = [];
   const sub_batches: InternalSubBatchResult[] = [];
+  const faqCache = new Map<string, FaqItem[]>();
   for (const [index, batch] of createSubBatches(options.intake_rows).entries()) {
-    const rows = batch.map((intake) => processIntakeRow(intake, options, targetLanguages));
+    const rows = batch.map((intake) => {
+      const variantGroup = variantGrouping.row_to_group[intake.row_id];
+      return processIntakeRow(intake, options, targetLanguages, variantGroup, faqCache);
+    });
     accumulated_rows.push(...rows);
 
     const quality_summary = summarizeQuality(rows);
@@ -371,6 +448,7 @@ export function processBatchJob(options: JobProcessorOptions): JobProcessorResul
     statuses,
     cost_estimate,
     cost_profile,
+    variant_groups: variantGrouping.groups,
     sub_batches,
     accumulated_rows,
     preview_exports,
